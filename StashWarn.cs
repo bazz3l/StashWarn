@@ -6,13 +6,15 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Stash Warn", "Bazz3l", "0.0.2")]
+    [Info("Stash Warn", "Bazz3l", "0.0.3")]
     [Description("Send notification to discord when someone uncovers another players/clans stash.")]
     public class StashWarn : RustPlugin
     {
         [PluginReference] Plugin Clans, Friends;
         
         #region Fields
+
+        private const string PermIgnore = "stashwarn.ignore";
         
         private readonly Dictionary<ulong, int> _violations = new Dictionary<ulong, int>();
         
@@ -33,7 +35,10 @@ namespace Oxide.Plugins
                 DiscordTitle = "Stash Uncovered!",
                 DiscordImage = "https://cdn.discordapp.com/attachments/598270871806803982/760249104675766282/419.png",
                 DiscordColor = 65535,
-                DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch."
+                DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch.",
+                EnableTeams = true,
+                EnableClans = true,
+                EnableFriend = true
             };
         }
 
@@ -59,6 +64,15 @@ namespace Oxide.Plugins
 
             [JsonProperty("Discord embed description")]
             public string DiscordDescription;
+
+            [JsonProperty("Enable team checks")]
+            public bool EnableTeams;
+            
+            [JsonProperty("Enable clan checks")]
+            public bool EnableClans;
+            
+            [JsonProperty("Enable friend checks")]
+            public bool EnableFriend;
         }
 
         #endregion
@@ -67,6 +81,11 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultConfig() => Config.WriteObject(GetDefaultConfig(), true);
 
+        private void OnServerInitialized()
+        {
+            permission.RegisterPermission(PermIgnore, this);
+        }
+        
         private void Init()
         {
             _config = Config.ReadObject<PluginConfig>();
@@ -74,7 +93,7 @@ namespace Oxide.Plugins
 
         private void CanSeeStash(BasePlayer suspect, StashContainer stash)
         {
-            if (stash.IsOpen())
+            if (stash.IsOpen() || permission.UserHasPermission(PermIgnore, suspect.UserIDString))
             {
                 return;
             }
@@ -124,13 +143,14 @@ namespace Oxide.Plugins
         private bool IsStashOwner(BasePlayer owner, BasePlayer suspect)
         {
             return owner.userID == suspect.userID 
+                   || IsTeamMember(owner, suspect)
                    || IsClanMember(owner, suspect) 
                    || IsFriend(owner, suspect);
         }
         
         private bool IsClanMember(BasePlayer owner, BasePlayer suspect)
         {
-            if (Clans == null)
+            if (!_config.EnableClans || Clans == null)
             {
                 return false;
             }
@@ -148,7 +168,7 @@ namespace Oxide.Plugins
         
         private bool IsFriend(BasePlayer owner, BasePlayer suspect)
         {
-            if (Friends == null)
+            if (!_config.EnableFriend || Friends == null)
             {
                 return false;
             }
@@ -156,6 +176,22 @@ namespace Oxide.Plugins
             return Friends.Call<bool>("AreFriends", owner.userID, suspect.userID);
         }
 
+        private bool IsTeamMember(BasePlayer owner, BasePlayer suspect)
+        {
+            if (!_config.EnableTeams)
+            {
+                return false;
+            }
+            
+            RelationshipManager.PlayerTeam team = RelationshipManager.Instance.FindTeam(owner.currentTeam);
+            if (team == null)
+            {
+                return false;
+            }
+
+            return team.members.Contains(suspect.userID);
+        }
+        
         #endregion
         
         #region Discord
