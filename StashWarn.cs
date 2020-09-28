@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Stash Warn", "Bazz3l", "0.0.1")]
+    [Info("Stash Warn", "Bazz3l", "0.0.2")]
     [Description("Send notification to discord when someone uncovers another players/clans stash.")]
     public class StashWarn : RustPlugin
     {
@@ -26,25 +26,39 @@ namespace Oxide.Plugins
         {
             return new PluginConfig
             {
+                
                 DiscordWebhook = "https://discordapp.com/api/webhooks/webhook-here",
                 DiscordUsername = "Stash Warn",
-                DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch.",
+                DiscordAvatar = "https://cdn.discordapp.com/attachments/598270871806803982/760248934474973234/310.png",
                 DiscordTitle = "Stash Uncovered!",
                 DiscordImage = "https://cdn.discordapp.com/attachments/598270871806803982/760249104675766282/419.png",
-                DiscordAvatar = "https://cdn.discordapp.com/attachments/598270871806803982/760248934474973234/310.png",
-                DiscordColor = 65535
+                DiscordColor = 65535,
+                DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch."
             };
         }
 
         private class PluginConfig
         {
+            [JsonProperty("Discord webhook url")]
             public string DiscordWebhook;
+            
+            [JsonProperty("Discord username")]
             public string DiscordUsername;
-            public string DiscordDescription;
-            public string DiscordTitle;
-            public string DiscordImage;
+            
+            [JsonProperty("Discord avatar")]
             public string DiscordAvatar;
+
+            [JsonProperty("Discord embed title")]
+            public string DiscordTitle;
+            
+            [JsonProperty("Discord embed image")]
+            public string DiscordImage;
+            
+            [JsonProperty("Discord embed color")]
             public int DiscordColor;
+
+            [JsonProperty("Discord embed description")]
+            public string DiscordDescription;
         }
 
         #endregion
@@ -195,7 +209,7 @@ namespace Oxide.Plugins
             private EmbedImage Image { get; set; }
 
             [JsonProperty("color")]
-            private int Color { get; set; } = 111111;
+            private int Color { get; set; }
 
             [JsonProperty("url")]
             private string Url { get; set; }
