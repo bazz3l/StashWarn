@@ -54,6 +54,7 @@ namespace Oxide.Plugins
                 DiscordColor = 65535,
                 DiscordImage = "https://cdn.discordapp.com/attachments/598270871806803982/760249104675766282/419.png",
                 DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch.",
+                TrapsOnly = false,
                 EnableTeams = true,
                 EnableClans = true,
                 EnableFriend = true
@@ -82,6 +83,9 @@ namespace Oxide.Plugins
 
             [JsonProperty("Discord embed description")]
             public string DiscordDescription;
+            
+            [JsonProperty("Traps only logs stash traps only")]
+            public bool TrapsOnly;
 
             [JsonProperty("Enable team checks")]
             public bool EnableTeams;
@@ -122,15 +126,15 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultMessages()
         {
-            lang.RegisterMessages(new Dictionary<string, string>
-            {
-                {"InvalidSyntax", "/stash or /stash <amount>"},
-                {"Permission", "Unknown command {0}"},
-                {"Placed", "Stash placed time to catch some scum bags."},
-                {"Toggle", "Stash traps is now {0}."},
-                {"Enabled", "<color=#73D43B>Enabled</color>"},
-                {"Disabled", "<color=#DC143C>Disabled</color>"}
-            }, this);
+           lang.RegisterMessages(new Dictionary<string, string>
+           {
+               {"InvalidSyntax", "/stash or /stash <amount>"},
+               {"Permission", "Unknown command {0}"},
+               {"Placed", "Stash placed time to catch some scum bags."},
+               {"Toggle", "Stash traps is now {0}."},
+               {"Enabled", "<color=#73D43B>Enabled</color>"},
+               {"Disabled", "<color=#DC143C>Disabled</color>"}
+           }, this);
         }
         
         private void OnServerInitialized()
@@ -179,13 +183,13 @@ namespace Oxide.Plugins
             }
             else
             {
-                BasePlayer owner = BasePlayer.FindByID(stash.OwnerID);
-                if (owner == null)
+                if (_config.TrapsOnly)
                 {
                     return;
                 }
-
-                if (IsStashOwner(owner, suspect))
+                
+                BasePlayer owner = BasePlayer.FindByID(stash.OwnerID);
+                if (owner == null || IsStashOwner(owner, suspect))
                 {
                     return;
                 }
@@ -226,11 +230,11 @@ namespace Oxide.Plugins
 
         private void TogglePlayer(ulong userID)
         {
-            if (_stored.Toggles.Contains(userID))
-                _stored.Toggles.Remove(userID);
-            else
+            if (!_stored.Toggles.Remove(userID))
+            {
                 _stored.Toggles.Add(userID);
-            
+            }
+
             SaveData();
         }
 
