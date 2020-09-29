@@ -122,15 +122,15 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultMessages()
         {
-           lang.RegisterMessages(new Dictionary<string, string>
-               {
-                   {"InvalidSyntax", "/stash or /stash <amount>"},
-                   {"Permission", "Unknown command {0}"},
-                   {"Placed", "Stash placed time to catch some scum bags."},
-                   {"Toggle", "Stash warn is now {0}."},
-                   {"Enabled", "<color=#73D43B>Enabled</color>"},
-                   {"Disabled", "<color=#DC143C>Disabled</color>"}
-               }, this);
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                {"InvalidSyntax", "/stash or /stash <amount>"},
+                {"Permission", "Unknown command {0}"},
+                {"Placed", "Stash placed time to catch some scum bags."},
+                {"Toggle", "Stash traps is now {0}."},
+                {"Enabled", "<color=#73D43B>Enabled</color>"},
+                {"Disabled", "<color=#DC143C>Disabled</color>"}
+            }, this);
         }
         
         private void OnServerInitialized()
