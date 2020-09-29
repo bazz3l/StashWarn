@@ -47,7 +47,7 @@ namespace Oxide.Plugins
             return new PluginConfig
             {
                 
-                DiscordWebhook = "https://discordapp.com/api/webhooks/760189069090750516/2BwpTG4psgd8L71GQmH0hLx9dG8oWjA4Bbj1lNLkTkp0EWupN5_M55GTzVvyJnmICH3o",
+                DiscordWebhook = "https://discordapp.com/api/webhooks/webhook-here",
                 DiscordUsername = "Stash Warn",
                 DiscordAvatar = "https://cdn.discordapp.com/attachments/598270871806803982/760248934474973234/310.png",
                 DiscordTitle = "Stash Uncovered!",
