@@ -236,9 +236,12 @@ namespace Oxide.Plugins
 
         private void GiveStash(BasePlayer player, string value)
         {
-            int amount = 1;
+            int amount;
 
-            int.TryParse(value, out amount);
+            if (!int.TryParse(value, out amount))
+            {
+                amount = 1;
+            }
 
             player.inventory.GiveItem(ItemManager.CreateByName("stash.small", amount));
         }
