@@ -21,9 +21,7 @@ namespace Oxide.Plugins
         private const string PermUse = "stashwarn.use";
         
         private readonly Dictionary<ulong, int> _violations = new Dictionary<ulong, int>();
-
         private PluginConfig _config;
-        
         private StoredData _stored;
 
         #endregion
@@ -130,8 +128,8 @@ namespace Oxide.Plugins
                    {"Permission", "Unknown command {0}"},
                    {"Placed", "Stash placed time to catch some scum bags."},
                    {"Toggle", "Stash warn is now {0}."},
-                   {"Enabled", "Enabled"},
-                   {"Disabled", "Disabled"}
+                   {"Enabled", "<color=#73D43B>Enabled</color>"},
+                   {"Disabled", "<color=#DC143C>Disabled</color>"}
                }, this);
         }
         
