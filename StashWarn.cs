@@ -10,7 +10,7 @@ using Random = UnityEngine.Random;
 namespace Oxide.Plugins
 {
     [Info("Stash Warn", "Bazz3l", "0.0.4")]
-    [Description("Send notification to discord when someone uncovers another players/clans stash.")]
+    [Description("Send notification to discord when someone uncovers traps/players/clans stash.")]
     public class StashWarn : RustPlugin
     {
         [PluginReference] Plugin Clans, Friends;
