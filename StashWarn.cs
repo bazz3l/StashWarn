@@ -16,11 +16,16 @@ namespace Oxide.Plugins
         [PluginReference] Plugin Clans, Friends;
         
         #region Fields
-
+        
         private const string PermIgnore = "stashwarn.ignore";
         private const string PermUse = "stashwarn.use";
         
         private readonly Dictionary<ulong, int> _violations = new Dictionary<ulong, int>();
+        private readonly Dictionary<string, string> _headers = new Dictionary<string, string>()
+        {
+            {"Content-Type", "application/json"}
+        };
+        
         private PluginConfig _config;
         private StoredData _stored;
 
@@ -364,9 +369,7 @@ namespace Oxide.Plugins
                 return;
             }
 
-            webrequest.Enqueue(_config.DiscordWebhook, message.ToJson(), (code, response) => {}, this, RequestMethod.POST, new Dictionary<string, string>() {
-                { "Content-Type", "application/json" }
-            });
+            webrequest.Enqueue(_config.DiscordWebhook, message.ToJson(), (code, response) => {}, this, RequestMethod.POST, _headers);
         }
         
         private class EmbedBuilder
