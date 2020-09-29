@@ -1,12 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Oxide.Core.Libraries;
 using Oxide.Core.Plugins;
+using Oxide.Core;
 using UnityEngine;
 using Newtonsoft.Json;
+using Random = UnityEngine.Random;
 
 namespace Oxide.Plugins
 {
-    [Info("Stash Warn", "Bazz3l", "0.0.3")]
+    [Info("Stash Warn", "Bazz3l", "0.0.4")]
     [Description("Send notification to discord when someone uncovers another players/clans stash.")]
     public class StashWarn : RustPlugin
     {
@@ -15,13 +18,30 @@ namespace Oxide.Plugins
         #region Fields
 
         private const string PermIgnore = "stashwarn.ignore";
+        private const string PermUse = "stashwarn.use";
         
         private readonly Dictionary<ulong, int> _violations = new Dictionary<ulong, int>();
-        
+
         private PluginConfig _config;
+        
+        private StoredData _stored;
 
         #endregion
 
+        #region Storage
+
+        private class StoredData
+        {
+            public readonly List<ulong> Toggles = new List<ulong>();
+        }
+
+        private void SaveData()
+        {
+            Interface.Oxide.DataFileSystem.WriteObject(Name, _stored);
+        }
+        
+        #endregion
+        
         #region Config
 
         PluginConfig GetDefaultConfig()
@@ -29,12 +49,12 @@ namespace Oxide.Plugins
             return new PluginConfig
             {
                 
-                DiscordWebhook = "https://discordapp.com/api/webhooks/webhook-here",
+                DiscordWebhook = "https://discordapp.com/api/webhooks/760189069090750516/2BwpTG4psgd8L71GQmH0hLx9dG8oWjA4Bbj1lNLkTkp0EWupN5_M55GTzVvyJnmICH3o",
                 DiscordUsername = "Stash Warn",
                 DiscordAvatar = "https://cdn.discordapp.com/attachments/598270871806803982/760248934474973234/310.png",
                 DiscordTitle = "Stash Uncovered!",
-                DiscordImage = "https://cdn.discordapp.com/attachments/598270871806803982/760249104675766282/419.png",
                 DiscordColor = 65535,
+                DiscordImage = "https://cdn.discordapp.com/attachments/598270871806803982/760249104675766282/419.png",
                 DiscordDescription = "Pst!, {0} uncovered a stash check it out bitch.",
                 EnableTeams = true,
                 EnableClans = true,
@@ -73,6 +93,27 @@ namespace Oxide.Plugins
             
             [JsonProperty("Enable friend checks")]
             public bool EnableFriend;
+            
+            [JsonProperty("Stash inventory items")]
+            public Dictionary<string, int> StashItems = new Dictionary<string, int>
+            {
+                {"lowgradefuel", 100},
+                {"metal.fragments", 100},
+                {"metal.ore", 100},
+                {"cloth", 100},
+                {"leather", 100},
+                {"scrap", 10},
+                {"fat.animal", 100},
+                {"gunpowder", 100},
+                {"metal.refined", 10},
+                {"hq.metal.ore", 10},
+                {"bone.fragments", 100},
+                {"charcoal", 100},
+                {"stones", 100},
+                {"sulfur", 100},
+                {"sulfur.ore", 100},
+                {"wood", 100}
+            };
         }
 
         #endregion
@@ -81,19 +122,51 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultConfig() => Config.WriteObject(GetDefaultConfig(), true);
 
+        protected override void LoadDefaultMessages()
+        {
+            lang.RegisterMessages(new Dictionary<string, string> 
+            {
+               {"InvalidSyntax", "/stash or /stash <amount>"},
+               {"Permission", "Unknown command {0}"},
+               {"Toggle", "Stash warn is now {0}."},
+               {"Placed", "Stash placed time to catch some scum bags."}
+           }, this);
+        }
+        
         private void OnServerInitialized()
         {
             permission.RegisterPermission(PermIgnore, this);
+            permission.RegisterPermission(PermUse, this);
         }
-        
+
         private void Init()
         {
             _config = Config.ReadObject<PluginConfig>();
+            _stored = Interface.Oxide.DataFileSystem.ReadObject<StoredData>(Name);
+        }
+
+        private void OnEntityBuilt(Planner planner, GameObject gameObject)
+        {
+            StashContainer stash = gameObject.GetComponent<StashContainer>();
+            if (stash == null)
+            {
+                return;
+            }
+            
+            BasePlayer player = planner.GetOwnerPlayer();
+            if (player == null || !HasPermission(player, PermUse) || !_stored.Toggles.Contains(player.userID))
+            {
+                return;
+            }
+
+            SetupStash(stash);
+            
+            player.ChatMessage(Lang("Placed", player.UserIDString));
         }
 
         private void CanSeeStash(BasePlayer suspect, StashContainer stash)
         {
-            if (stash.IsOpen() || permission.UserHasPermission(PermIgnore, suspect.UserIDString))
+            if (stash.IsOpen() || HasPermission(suspect, PermIgnore))
             {
                 return;
             }
@@ -125,7 +198,64 @@ namespace Oxide.Plugins
 
         #endregion
         
+        #region Commands
+
+        [ChatCommand("stash")]
+        private void CmdStash(BasePlayer player, string command, string[] args)
+        {
+            if (!HasPermission(player, PermUse))
+            {
+                player.ChatMessage(Lang("Permission", player.UserIDString, command));
+                return;
+            }
+
+            if (args.Length != 0)
+            {
+                GiveStash(player, args[0]);
+                return;
+            }
+
+            TogglePlayer(player.userID);
+
+            player.ChatMessage(Lang("Toggle", player.UserIDString, (_stored.Toggles.Contains(player.userID) ? "Enabled" : "Disabled")));
+        }
+
+        #endregion
+        
         #region Helpers
+
+        private void TogglePlayer(ulong userID)
+        {
+            if (_stored.Toggles.Contains(userID))
+                _stored.Toggles.Remove(userID);
+            else
+                _stored.Toggles.Add(userID);
+            
+            SaveData();
+        }
+
+        private void GiveStash(BasePlayer player, string value)
+        {
+            int amount = 1;
+
+            int.TryParse(value, out amount);
+
+            player.inventory.GiveItem(ItemManager.CreateByName("stash.small", amount));
+        }
+
+        private void SetupStash(StashContainer stash)
+        {
+            stash.OwnerID = 0UL;
+            
+            stash.SetHidden(true);
+            
+            for (int i = 0; i < stash.inventory.capacity; i++)
+            {
+                KeyValuePair<string, int> invItem = _config.StashItems.ElementAt(Random.Range(0, _config.StashItems.Count));
+                
+                ItemManager.CreateByName(invItem.Key, invItem.Value)?.MoveToContainer(stash.inventory);
+            }
+        }
 
         private void SetViolation(ulong userID)
         {
@@ -191,9 +321,13 @@ namespace Oxide.Plugins
 
             return team.members.Contains(suspect.userID);
         }
+
+        private bool HasPermission(BasePlayer player, string perm) => permission.UserHasPermission(player.UserIDString, perm);
+
+        private string Lang(string key, string id = null, params object[] args) => string.Format(lang.GetMessage(key, this, id), args);
         
         #endregion
-        
+
         #region Discord
 
         private DiscordMessage BuildMessage(BasePlayer owner, BasePlayer suspect)
@@ -212,7 +346,7 @@ namespace Oxide.Plugins
                 .WithUsername(_config.DiscordUsername)
                 .WithAvatar(_config.DiscordAvatar)
                 .WithContent("")
-                .SetEmbed(builder);            
+                .SetEmbed(builder);
         }
 
         private void SendMessage(BasePlayer owner, BasePlayer suspect)
