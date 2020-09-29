@@ -124,13 +124,15 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultMessages()
         {
-            lang.RegisterMessages(new Dictionary<string, string> 
-            {
-               {"InvalidSyntax", "/stash or /stash <amount>"},
-               {"Permission", "Unknown command {0}"},
-               {"Toggle", "Stash warn is now {0}."},
-               {"Placed", "Stash placed time to catch some scum bags."}
-           }, this);
+           lang.RegisterMessages(new Dictionary<string, string>
+               {
+                   {"InvalidSyntax", "/stash or /stash <amount>"},
+                   {"Permission", "Unknown command {0}"},
+                   {"Placed", "Stash placed time to catch some scum bags."},
+                   {"Toggle", "Stash warn is now {0}."},
+                   {"Enabled", "Enabled"},
+                   {"Disabled", "Disabled"}
+               }, this);
         }
         
         private void OnServerInitialized()
@@ -217,7 +219,7 @@ namespace Oxide.Plugins
 
             TogglePlayer(player.userID);
 
-            player.ChatMessage(Lang("Toggle", player.UserIDString, (_stored.Toggles.Contains(player.userID) ? "Enabled" : "Disabled")));
+            player.ChatMessage(Lang("Toggle", player.UserIDString, (_stored.Toggles.Contains(player.userID) ? Lang("Enabled", player.UserIDString) : Lang("Disabled", player.UserIDString))));
         }
 
         #endregion
